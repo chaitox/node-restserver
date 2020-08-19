@@ -17,7 +17,7 @@ const { request } = require('express');
         let limite = req.query.limite || 5;
         limite = Number(limite);
 
-        Usuario.find({ estado: true }, 'nombre email role estado google')
+        Usuario.find({  }, 'nombre email role estado google')
             .skip(desde)
             .limit(limite)
             .exec((err, usuarios)=>{
@@ -27,7 +27,7 @@ const { request } = require('express');
                         err: err
                     });
                 }
-                Usuario.count({estado: true} , (err, conteo)=>{
+                Usuario.count({} , (err, conteo)=>{
                     res.json({
                     ok: true,
                     usuarios,
