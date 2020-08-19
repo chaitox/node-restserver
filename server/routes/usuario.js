@@ -1,13 +1,42 @@
 const express = require('express');
 const app = express()
 const bcrypt = require('bcrypt');
-const Usuario = require('../models/usuario')
+const _ = require('underscore');
+
+
+const Usuario = require('../models/usuario');
+const { request } = require('express');
 
 
 
-app.get('/usuario', function (req, res) {
-    res.json('get Usuario')
-  });
+    app.get('/usuario', function (req, res) {
+
+        let desde = req.query.desde || 0;
+        desde = Number(desde);
+
+        let limite = req.query.limite || 5;
+        limite = Number(limite);
+
+        Usuario.find({ estado: true }, 'nombre email role estado google')
+            .skip(desde)
+            .limit(limite)
+            .exec((err, usuarios)=>{
+                if(err){
+                    return res.status(400).json({
+                        ok: false,
+                        err: err
+                    });
+                }
+                Usuario.count({estado: true} , (err, conteo)=>{
+                    res.json({
+                    ok: true,
+                    usuarios,
+                    conteo
+                });
+                })
+            
+            })
+    });
  
   
 
@@ -43,14 +72,16 @@ app.get('/usuario', function (req, res) {
       
     });
 
-
-
   
     app.put('/usuario/:id', function (req, res) {
         let id = req.params.id;
-        let body = req.body;
-
-        Usuario.findByIdAndUpdate(id, body, {new: true}, (err, usuarioDb)=>{
+        let body = _.pick(req.body,  ['nombre',
+        'edad',
+        'img',
+        'role',
+        'estado']);
+       
+        Usuario.findByIdAndUpdate(id, body, {new: true, runValidators: true}, (err, usuarioDb)=>{
            
             if(err){
                 return res.status(400).json({
@@ -66,9 +97,44 @@ app.get('/usuario', function (req, res) {
         });
       
     });
+
+
     
-    app.delete('/usuario', function (req, res) {
-      res.json('delete Usuario')
+    app.delete('/usuario/:id', function (req, res) {
+     
+
+        let id = req.params.id;
+
+        let cambiaEstado = {
+            estado: false
+        }
+        //Usuario.findByIdAndRemove(id, ,(err, usuarioBorrado)=>{
+        Usuario.findByIdAndUpdate(id, cambiaEstado  ,(err, usuarioBorrado)=>{
+            if(err){
+                return res.status(400).json({
+                    ok: false,
+                    err: err
+                });
+            }
+            if (!usuarioBorrado) {
+                return res.status(400).json({
+                    ok: false,
+                    err: {
+                        message: 'Usuario no existe o ya ha sido borrado.'
+                    }
+                })
+            }
+            res.json({
+                ok: true,
+                usuario: usuarioBorrado
+            });
+        });
+
+
+
+
+
+
     });
 
     module.exports = app;
