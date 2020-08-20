@@ -32,13 +32,13 @@ const { request } = require('express');
                         err: err
                     });
                 }
-                Usuario.countDocuments ({} , (err, conteo)=>{
+                Usuario.count ({} , (err, conteo)=>{
                     res.json({
                     ok: true,
                     usuarios,
                     conteo
-                });
                 })
+                });
             
             })
     });
