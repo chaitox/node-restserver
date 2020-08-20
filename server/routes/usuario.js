@@ -1,143 +1,148 @@
 const express = require('express');
-const app = express()
+
 const bcrypt = require('bcrypt');
 const _ = require('underscore');
 
-
 const Usuario = require('../models/usuario');
-//se extrae la funcion verificarToken por medio de la destructuracion
-const { verificarToken, verificarRole } = require('../middlewares/authetication');
-//=================================================================
-const { request } = require('express');
+const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion');
+
+const app = express();
 
 
-//para utilizar tokens se utilizan los middlewares
-    app.get('/usuario', verificarToken , function (req, res) {
+app.get('/usuario', verificaToken, (req, res) => {
 
-       
-        
-        let desde = req.query.desde || 0;
-        desde = Number(desde);
 
-        let limite = req.query.limite || 5;
-        limite = Number(limite);
+    let desde = req.query.desde || 0;
+    desde = Number(desde);
 
-        Usuario.find({  }, 'nombre email role estado google')
-            .skip(desde)
-            .limit(limite)
-            .exec((err, usuarios)=>{
-                if(err){
-                    return res.status(400).json({
-                        ok: false,
-                        err: err
-                    });
-                }
-                
-                    res.json({
+    let limite = req.query.limite || 5;
+    limite = Number(limite);
+
+    Usuario.find({ estado: true }, 'nombre email role estado google img')
+        .skip(desde)
+        .limit(limite)
+        .exec((err, usuarios) => {
+
+            if (err) {
+                return res.status(400).json({
+                    ok: false,
+                    err
+                });
+            }
+
+            Usuario.count({ estado: true }, (err, conteo) => {
+
+                res.json({
                     ok: true,
-                    usuarios
-                    });
-                
-            
+                    usuarios,
+                    cuantos: conteo
+                });
+
             });
+
+
+        });
+
+
+});
+
+app.post('/usuario', [verificaToken, verificaAdmin_Role], function(req, res) {
+
+    let body = req.body;
+
+    let usuario = new Usuario({
+        nombre: body.nombre,
+        email: body.email,
+        password: bcrypt.hashSync(body.password, 10),
+        role: body.role
     });
- 
-  
 
 
-  app.post('/usuario', [verificarToken, verificarRole],  function (req, res) {
-      let body = req.body
-      let usuario = new Usuario({
-          nombre : body.nombre,
-          email : body.email,
-          password: bcrypt.hashSync(body.password, 10),
-          role: body.role
-      });
+    usuario.save((err, usuarioDB) => {
 
-      usuario.save( (err, usuarioDb) =>{
-
-        if(err){
+        if (err) {
             return res.status(400).json({
                 ok: false,
-                err: err
+                err
             });
         }
-
-       // usuarioDb.password = null;
 
         res.json({
             ok: true,
-            usuario: usuarioDb
+            usuario: usuarioDB
         });
 
-      });
-      
-      
-    });
 
-  
-    app.put('/usuario/:id', [verificarToken, verificarRole], function (req, res) {
-        let id = req.params.id;
-        let body = _.pick(req.body,  ['nombre',
-        'edad',
-        'img',
-        'role',
-        'estado']);
-       
-        Usuario.findByIdAndUpdate(id, body, {new: true, runValidators: true}, (err, usuarioDb)=>{
-           
-            if(err){
-                return res.status(400).json({
-                    ok: false,
-                    err: err
-                });
-            }
-            res.json({
-                ok: true,
-                usuarioDb
-            })
-
-        });
-      
     });
 
 
-    
-    app.delete('/usuario/:id', [verificarToken, verificarRole],  function (req, res) {
-     
+});
 
-        let id = req.params.id;
+app.put('/usuario/:id', [verificaToken, verificaAdmin_Role], function(req, res) {
 
-        let cambiaEstado = {
-            estado: false
-        }
-        //Usuario.findByIdAndRemove(id, ,(err, usuarioBorrado)=>{
-        Usuario.findByIdAndUpdate(id, cambiaEstado  ,(err, usuarioBorrado)=>{
-            if(err){
-                return res.status(400).json({
-                    ok: false,
-                    err: err
-                });
-            }
-            if (!usuarioBorrado) {
-                return res.status(400).json({
-                    ok: false,
-                    err: {
-                        message: 'Usuario no existe o ya ha sido borrado.'
-                    }
-                })
-            }
-            res.json({
-                ok: true,
-                usuario: usuarioBorrado
+    let id = req.params.id;
+    let body = _.pick(req.body, ['nombre', 'email', 'img', 'role', 'estado']);
+
+    Usuario.findByIdAndUpdate(id, body, { new: true, runValidators: true }, (err, usuarioDB) => {
+
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                err
             });
+        }
+
+
+
+        res.json({
+            ok: true,
+            usuario: usuarioDB
         });
 
+    })
+
+});
+
+app.delete('/usuario/:id', [verificaToken, verificaAdmin_Role], function(req, res) {
 
 
+    let id = req.params.id;
 
+    // Usuario.findByIdAndRemove(id, (err, usuarioBorrado) => {
 
+    let cambiaEstado = {
+        estado: false
+    };
+
+    Usuario.findByIdAndUpdate(id, cambiaEstado, { new: true }, (err, usuarioBorrado) => {
+
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        };
+
+        if (!usuarioBorrado) {
+            return res.status(400).json({
+                ok: false,
+                err: {
+                    message: 'Usuario no encontrado'
+                }
+            });
+        }
+
+        res.json({
+            ok: true,
+            usuario: usuarioBorrado
+        });
 
     });
 
-    module.exports = app;
+
+
+});
+
+
+
+module.exports = app;
