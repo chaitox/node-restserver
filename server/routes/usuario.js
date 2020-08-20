@@ -35,8 +35,7 @@ const { request } = require('express');
                 
                     res.json({
                     ok: true,
-                    usuarios,
-                    conteo
+                    usuarios
                     });
                 
             
