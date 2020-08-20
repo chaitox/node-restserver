@@ -5,12 +5,17 @@ const _ = require('underscore');
 
 
 const Usuario = require('../models/usuario');
+//se extrae la funcion verificarToken por medio de la destructuracion
+const { verificarToken, verificarRole } = require('../middlewares/authetication');
+//=================================================================
 const { request } = require('express');
 
 
+//para utilizar tokens se utilizan los middlewares
+    app.get('/usuario', verificarToken , function (req, res) {
 
-    app.get('/usuario', function (req, res) {
-
+       
+        
         let desde = req.query.desde || 0;
         desde = Number(desde);
 
@@ -27,7 +32,7 @@ const { request } = require('express');
                         err: err
                     });
                 }
-                Usuario.count({} , (err, conteo)=>{
+                Usuario.countDocuments ({} , (err, conteo)=>{
                     res.json({
                     ok: true,
                     usuarios,
@@ -41,9 +46,8 @@ const { request } = require('express');
   
 
 
-  app.post('/usuario', function (req, res) {
+  app.post('/usuario', [verificarToken, verificarRole],  function (req, res) {
       let body = req.body
-  
       let usuario = new Usuario({
           nombre : body.nombre,
           email : body.email,
@@ -73,7 +77,7 @@ const { request } = require('express');
     });
 
   
-    app.put('/usuario/:id', function (req, res) {
+    app.put('/usuario/:id', [verificarToken, verificarRole], function (req, res) {
         let id = req.params.id;
         let body = _.pick(req.body,  ['nombre',
         'edad',
@@ -100,7 +104,7 @@ const { request } = require('express');
 
 
     
-    app.delete('/usuario/:id', function (req, res) {
+    app.delete('/usuario/:id', [verificarToken, verificarRole],  function (req, res) {
      
 
         let id = req.params.id;
