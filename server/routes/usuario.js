@@ -37,10 +37,10 @@ const { request } = require('express');
                     ok: true,
                     usuarios,
                     conteo
-                })
+                    });
                 });
             
-            })
+            });
     });
  
   
