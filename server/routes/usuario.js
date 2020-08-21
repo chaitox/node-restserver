@@ -102,7 +102,8 @@ app.put('/usuario/:id', [verificaToken, verificaAdmin_Role], function(req, res) 
     })
 
 });
-
+//24 de agosto endocrinologia, ginecologia
+//
 app.delete('/usuario/:id', [verificaToken, verificaAdmin_Role], function(req, res) {
 
 
