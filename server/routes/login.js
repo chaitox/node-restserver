@@ -137,11 +137,6 @@ app.post('/google', async (req, res) => {
                     });
                 }
         
-                res.json({
-                    ok: true,
-                    usuario: usuarioDB
-                });
-        
         
             });       
         }
